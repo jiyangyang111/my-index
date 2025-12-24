@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DIDA汇率计算器</title>
+  <style>
+    /* 基于DIDA logo的粉/红渐变配色统一页面风格 */
+    :root {
+      --dida-pink-light: #FFC2D1;
+      --dida-pink-main: #FF6B81;
+      --dida-pink-dark: #E5383B;
+      --dida-bg: #1A1A2E; /* 呼应logo深色背景 */
+      --dida-text: #F8F9FA;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 20px;
+      background: var(--dida-bg);
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.3);
+      color: var(--dida-text);
+    }
+
+    /* 顶部容器：整合logo区域和计算器名称 */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Logo容器：相对定位，用于放置右下角的DIDA文字 */
+    .logo-container {
+      position: relative;
+      display: inline-block;
+    }
+    .logo {
+      height: 50px;
+      width: auto;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+      transition: transform 0.3s ease;
+    }
+    .logo:hover {
+      transform: scale(1.03);
+    }
+    /* DIDA文字：绝对定位在logo右下角 */
+    .logo-name {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--dida-pink-light);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.3);
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    /* 计算器名称样式：居中显示 */
+    .calc-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--dida-pink-light);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      margin: 0 auto;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 6px;
+      display: block;
+      font-size: 16px;
+      color: var(--dida-pink-light);
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      font-size: 18px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-sizing: border-box;
+      resize: vertical;
+      font-family: monospace, monospace;
+      background: rgba(255,255,255,0.05);
+      color: var(--dida-text);
+    }
+    textarea {
+      height: 100px;
+      margin-bottom: 15px;
+    }
+    /* 按钮样式：用DIDA粉色系 */
+    button {
+      margin-top: 15px;
+      width: 100%;
+      height: 44px;
+      font-size: 20px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(135deg, var(--dida-pink-main), var(--dida-pink-dark));
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    button:hover {
+      background: linear-gradient(135deg, var(--dida-pink-dark), var(--dida-pink-main));
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      min-height: 40px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      user-select: text;
+      word-break: break-word;
+      color: var(--dida-pink-light);
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 480px) {
+      .logo {
+        height: 40px;
+      }
+      .logo-name {
+        font-size: 10px;
+      }
+      .calc-name {
+        font-size: 18px;
+      }
+      .top-bar {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部栏：左侧logo（带右下角DIDA文字） + 中间计算器名称 -->
+  <div class="top-bar">
+    <div class="logo-container">
+      < img src="logo.png" alt="DIDA logo" class="logo" />
+      <span class="logo-name">DIDA</span>
+    </div>
+    <h1 class="calc-name">多币种汇率计算器</h1>
+  </div>
+
+  <label for="expression">请输入带币种的表达式（例如：<code>100USD+20JPY</code>）</label>
+  <textarea id="expression" placeholder="输入表达式...">100CNY-90USD</textarea>
+
+  <div class="currency-select-container">
+    <label for="targetCurrency">目标币种：</label>
+    <input id="targetCurrency" type="text" value="THB" maxlength="5" />
+  </div>
+
+  <button id="calculateBtn">计算</button>
+
+  <div id="result" aria-live="polite"></div>
+
+  <script>
+    // 原有脚本内容保持不变
+    (function() {
+      const expressionInput = document.getElementById('expression');
+      const targetCurrencyInput = document.getElementById('targetCurrency');
+      const calculateBtn = document.getElementById('calculateBtn');
+      const resultDiv = document.getElementById('result');
+
+      function normalizeOperators(expr) {
+        let prev;
+        do {
+          prev = expr;
+          expr = expr.replace(/--/g, '+')
+                     .replace(/\+\+/g, '+')
+                     .replace(/\+-/g, '-')
+                     .replace(/-\+/g, '-');
+        } while (expr !== prev);
+        return expr;
+      }
+
+      function parseExpression(expr) {
+        expr = expr.replace(/\s+/g, '');
+        expr = normalizeOperators(expr);
+
+        const regex = /([+-]?[\d]+(?:\.[\d]+)?)([a-zA-Z]+)/g;
+
+        let items = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(expr)) !== null) {
+          if (match.index !== lastIndex) {
+            throw new Error('表达式格式错误，存在无法识别的字符');
+          }
+          lastIndex = regex.lastIndex;
+
+          const numStr = match[1];
+          const num = parseFloat(numStr);
+          if (isNaN(num)) throw new Error(`无法识别数字：${numStr}`);
+
+          const cur = match[2].toUpperCase();
+
+          items.push({num, cur});
+        }
+
+        if (lastIndex !== expr.length) {
+          throw new Error('表达式格式错误，末尾存在无法识别的字符');
+        }
+
+        if (items.length === 0) {
+          throw new Error('表达式中没有有效的数字和币种');
+        }
+
+        return items;
+      }
+
+      function fetchExchangeRates() {
+        const url = 'https://open.er-api.com/v6/latest/USD';
+        return fetch(url)
+          .then(response => {
+            if (!response.ok) throw new Error('获取汇率失败');
+            return response.json();
+          })
+          .then(data => {
+            if (data.result !== 'success') throw new Error('获取汇率失败');
+            return data;
+          });
+      }
+
+      function compute(items, targetCur, rates) {
+        targetCur = targetCur.toUpperCase();
+        if (!(targetCur in rates)) {
+          throw new Error(`未知的目标币种: ${targetCur}`);
+        }
+
+        let totalInUSD = 0;
+        for (const {num, cur} of items) {
+          const upperCur = cur.toUpperCase();
+          if (!(upperCur in rates)) {
+            throw new Error(`未知的币种: ${cur}`);
+          }
+          const amountInUSD = num / rates[upperCur];
+          totalInUSD += amountInUSD;
+        }
+
+        const converted = totalInUSD * rates[targetCur];
+        return converted;
+      }
+
+      function formatResult(num) {
+        return parseFloat(num.toFixed(4)).toString();
+      }
+
+      calculateBtn.addEventListener('click', () => {
+        const expr = expressionInput.value.trim();
+        const targetCur = targetCurrencyInput.value.trim().toUpperCase();
+
+        if (!expr) {
+          resultDiv.textContent = '请输入表达式';
+          return;
+        }
+        if (!targetCur) {
+          resultDiv.textContent = '请输入目标币种';
+          return;
+        }
+
+        resultDiv.textContent = '正在获取汇率，请稍候...';
+
+        fetchExchangeRates()
+          .then(data => {
+            try {
+              const items = parseExpression(expr);
+              const res = compute(items, targetCur, data.rates);
+              resultDiv.textContent = `结果：${formatResult(res)} ${targetCur}`;
+            } catch (e) {
+              resultDiv.textContent = '错误：' + e.message;
+            }
+          })
+          .catch(() => {
+            resultDiv.textContent = '错误：获取汇率失败，请检查网络或稍后重试';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
